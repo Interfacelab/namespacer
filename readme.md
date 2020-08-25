@@ -53,6 +53,6 @@ You can see some example configurations in `vendor/ilab/namespacer/sample.config
 `vendor/ilab/namespacer/patches.config.php` that will demonstrate how to insert your own code into the namespacing
 process to catch special cases. 
 
-##Reporting Bugs
+## Reporting Bugs
 If you run into issues, please open a ticket and attach the composer.json you were trying to process with a clear
 description of the problem.
