@@ -130,6 +130,17 @@ class Package {
 		if (isset($config['autoload'])) {
 			if (isset($config['autoload']['psr-0'])) {
 				foreach($config['autoload']['psr-0'] as $namespace => $directory) {
+					$tempPsr0Path = $this->path.'tmp/';
+					$psr0Path = trailingslashit($this->path.$directory);
+					mkdir($tempPsr0Path, 0755, true);
+					`mv {$psr0Path}* $tempPsr0Path`;
+
+					$namespacePath = ltrim(str_replace("\\", "/", $namespacePrefix), '\\');
+					$newPsr0Path = trailingslashit(trailingslashit($this->path.$directory).$namespacePath);
+					mkdir($newPsr0Path, 0755, true);
+					`mv {$tempPsr0Path}* $newPsr0Path`;
+					@rmdir($tempPsr0Path);
+
 					$config['autoload']['psr-0'][$namespacePrefix.$namespace] = $directory;
 					unset($config['autoload']['psr-0'][$namespace]);
 				}
