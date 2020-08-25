@@ -1,0 +1,30 @@
+{
+  "name": "ilab/namespacer",
+  "description": "Tool for re-namespacing composer packages for use in WordPress plugins.",
+  "type": "library",
+  "license": "LGPL-3.0-or-later",
+  "keywords": [
+    "namespace",
+    "wordpress"
+  ],
+  "authors": [
+    {
+      "name": "Jon Gilkison",
+      "email": "jon@interfacelab.com"
+    }
+  ],
+  "require": {
+    "symfony/finder": "^5.1",
+    "symfony/console": "^5.1",
+    "ext-json": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Namespacer\\": "Source"
+    },
+    "files": [
+      "Source/functions.php"
+    ]
+  },
+  "bin": ["bin/namespacer"]
+}

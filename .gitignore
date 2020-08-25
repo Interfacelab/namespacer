@@ -1,0 +1,6 @@
+plugin
+dest
+build
+temp
+vendor
+composer.lock
