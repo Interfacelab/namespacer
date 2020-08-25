@@ -195,12 +195,13 @@ class Package {
 	}
 
 	/**
+	 * @param Configuration $configuration
 	 * @param ConsoleSectionOutput $output
 	 * @param ProgressBar $progressBar
 	 * @param string $namespacePrefix
 	 * @param array $namespaces
 	 */
-	public function renamespace($output, $progressBar, string $namespacePrefix, array $namespaces) {
+	public function renamespace($configuration, $output, $progressBar, string $namespacePrefix, array $namespaces) {
 		$namespacePrefixString = str_replace("\\", "\\\\", $namespacePrefix);
 		$namespacePrefixStringRegex = str_replace("\\", "\\\\", $namespacePrefixString);
 
@@ -227,12 +228,16 @@ class Package {
 				}
 			}
 
+			$source = $configuration->start($source, $currentNamespace, $namespacePrefix, $this->name, $file);
+
 			$currentNamespaceRegexSafe = str_replace("\\","\\\\", $currentNamespace);
 			$source = preg_replace("#^\s*namespace\s+$currentNamespaceRegexSafe\s*;#m", "\nnamespace $namespacePrefix$currentNamespace;", $source, -1, $count);
 			$source = preg_replace("#^\s*\<\?php\s+namespace\s+$currentNamespaceRegexSafe\s*;#m", "<?php\n\nnamespace $namespacePrefix$currentNamespace;", $source, -1, $count);
 
 			$changes = 0;
 			foreach($namespaces as $namespace) {
+				$source = $configuration->before($source, $namespace, $currentNamespace, $namespacePrefix, $this->name, $file);
+
 				$namespace = $namespace."\\";
 				$stringNamespace = str_replace("\\", "\\\\", $namespace);
 				$stringNamespaceRegex = str_replace("\\", "\\\\", $stringNamespace);
@@ -286,7 +291,11 @@ class Package {
 				$source = preg_replace("#\\s+$namespacePrefixString(.*)\s*\(#m", ' \\NAMESPACEPLACEHOLDER$1(', $source, -1, $count);
 				$source = str_replace('NAMESPACEPLACEHOLDER', $namespacePrefix, $source);
 				$changes += $count;
+
+				$source = $configuration->after($source, $namespace, $currentNamespace, $namespacePrefix, $this->name, $file);
 			}
+
+			$source = $configuration->end($source, $currentNamespace, $namespacePrefix, $this->name, $file);
 
 			file_put_contents($file, $source);
 		}

@@ -24,6 +24,6 @@ $scanCommand = new ScanUsesCommand(null, $root);
 $application = new Application();
 $application->add($renamespaceCommand);
 $application->add($scanCommand);
-$application->setDefaultCommand($renamespaceCommand->getName());
+$application->setDefaultCommand('renamespace', true);
 $application->run();
 

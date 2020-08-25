@@ -2,6 +2,7 @@
 
 namespace ILAB\Namespacer\Commands;
 
+use ILAB\Namespacer\Models\Configuration;
 use ILAB\Namespacer\Models\Project;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
@@ -22,34 +23,73 @@ class RenamespaceCommand extends Command {
 	}
 
 	protected function configure() {
-		$this->addArgument("input", InputArgument::REQUIRED, "The path to the project containing the composer.json to process.");
-		$this->addArgument("output", InputArgument::REQUIRED, "The path to save the fixed libraries to.");
+		$this->setDescription("Renamespaces a composer.json project for use in WordPress plugins.");
 
-		$this->addOption("package-prefix", "package", InputOption::VALUE_REQUIRED, "The prefix to add to packages", "mcloud");
-		$this->addOption("namespace-prefix", "namespace", InputOption::VALUE_REQUIRED, "The prefix to add to namespaces", "MediaCloud\\Vendor\\");
+		$this->addArgument("dest", InputArgument::REQUIRED, "The path to save the renamespaced libraries to.");
+
+		$this->addOption("composer", null, InputOption::VALUE_REQUIRED, "The path to the composer.json containing the packages to renamespace.", null);
+		$this->addOption("source", null, InputOption::VALUE_REQUIRED, "The path to the directory containing the composer.json to renamespace.  This directory should already have had `composer update` run in it.", null);
+
+		$this->addOption("package", null, InputOption::VALUE_REQUIRED, "The prefix to add to packages", "mcloud");
+		$this->addOption("namespace", null, InputOption::VALUE_REQUIRED, "The prefix to add to namespaces", "MediaCloud\\Vendor\\");
+
+		$this->addOption("config", null, InputOption::VALUE_REQUIRED, "The path to the configuration to use, if required.", null);
 	}
 
 	protected function execute(InputInterface $input, OutputInterface $output) {
 		//region Directories
 
-		$packagePrefix = $input->getOption('package-prefix');
-		$namespacePrefix = $input->getOption('namespace-prefix');
-
-		$namespacePrefix = rtrim($namespacePrefix, "\\")."\\";
-
-		$sourcePath = $input->getArgument('input');
-		if (strpos($sourcePath, '/') !== 0) {
-			$sourcePath = trailingslashit($this->rootDir.$sourcePath);
-		} else {
-			$sourcePath = trailingslashit($sourcePath);
-		}
-
-		if (!file_exists($sourcePath)) {
-			$output->writeln("<error>Input directory $sourcePath does not exist.</error>");
+		if (empty($input->getOption('composer')) && empty($input->getOption('source'))) {
+			$output->writeln("<error>You must specify either the --composer or --source option.</error>");
 			return Command::FAILURE;
 		}
 
-		$outputPath = $input->getArgument('output');
+		$packagePrefix = $input->getOption('package');
+		$namespacePrefix = $input->getOption('namespace');
+
+		$namespacePrefix = rtrim($namespacePrefix, "\\")."\\";
+
+		$tempPath = trailingslashit($this->rootDir.uniqid());
+		@mkdir($tempPath, 0755, true);
+
+		if (!empty($input->getOption('composer'))) {
+			$originalComposer = $input->getOption('composer');
+			if (strpos($originalComposer, '/') !== 0) {
+				$originalComposer = $this->rootDir.$originalComposer;
+			} else {
+				$originalComposer = $originalComposer;
+			}
+
+			if (!file_exists($originalComposer)) {
+				rmdir($tempPath);
+				$output->writeln("<error>Composer file does not exist at $originalComposer.</error>");
+				return Command::FAILURE;
+			}
+
+			$sourcePath = trailingslashit($tempPath.'project');
+			@mkdir($sourcePath, 0755, true);
+
+			copy($originalComposer, $sourcePath.'composer.json');
+
+			$output->writeln("Creating project ... ");
+			$output->writeln("");
+			`cd $sourcePath && composer update`;
+			$output->writeln("");
+		} else {
+			$sourcePath = $input->getOption('source');
+			if (strpos($sourcePath, '/') !== 0) {
+				$sourcePath = trailingslashit($this->rootDir.$sourcePath);
+			} else {
+				$sourcePath = trailingslashit($sourcePath);
+			}
+
+			if (!file_exists($sourcePath)) {
+				$output->writeln("<error>Input directory $sourcePath does not exist.</error>");
+				return Command::FAILURE;
+			}
+		}
+
+		$outputPath = $input->getArgument('dest');
 		if (strpos($outputPath, '/') !== 0) {
 			$outputPath = trailingslashit($this->rootDir.$outputPath);
 		} else {
@@ -57,19 +97,34 @@ class RenamespaceCommand extends Command {
 		}
 
 		if (file_exists($outputPath)) {
-			`rm -rf $outputPath`;
+			if (file_exists($outputPath.'lib')) {
+				`rm -rf {$outputPath}lib`;
+			}
+		} else {
+			if(!mkdir($outputPath, 0755, true)) {
+				$output->writeln("<error>Could not create output directory.</error>");
+				return Command::FAILURE;
+			}
 		}
 
-		if(!mkdir($outputPath, 0755, true)) {
-			$output->writeln("<error>Could not create output directory.</error>");
-			return Command::FAILURE;
-		}
-
-		$projectOutputPath = $outputPath.'project/';
-		$libraryOutputPath = $outputPath.'library/';
+		$projectOutputPath = $tempPath.'build/';
+		$libraryOutputPath = $tempPath.'library/';
 
 		@mkdir($projectOutputPath, 0755, true);
 		@mkdir($libraryOutputPath, 0755, true);
+
+		$configPath = null;
+		if (!empty($input->getOption('config'))) {
+			$configPath = $input->getOption('config');
+			if (strpos($configPath, '/') !== 0) {
+				$configPath = $this->rootDir.$configPath;
+			}
+
+			if (!file_exists($configPath)) {
+				$output->writeln("<error>Config file $configPath does not exist.</error>");
+				return Command::FAILURE;
+			}
+		}
 
 		//endregion
 
@@ -87,8 +142,8 @@ class RenamespaceCommand extends Command {
 				["Package Prefix", $packagePrefix],
 				["Namespace Prefix", $namespacePrefix],
 				["Source", $sourcePath],
-				["Library", $libraryOutputPath],
-				["Project", $projectOutputPath],
+				["Destination", $outputPath],
+				["Config", $configPath],
 			])
 			->render();
 
@@ -106,6 +161,7 @@ class RenamespaceCommand extends Command {
 		//endregion
 		
 		//region Package Processing
+		$configuration = new Configuration($configPath);
 		
 		$packageSection = $output->section();
 		$packageSection->writeln("Processing packages ...");
@@ -149,7 +205,7 @@ class RenamespaceCommand extends Command {
 		foreach($project->getPackages() as $packageName => $package) {
 			$packageSection->overwrite("Re-namespacing package $packageName ...");
 			$packageProgress->advance();
-			$package->renamespace($packageSection, $packageProgress, $namespacePrefix, $allNamespaces);
+			$package->renamespace($configuration, $packageSection, $packageProgress, $namespacePrefix, $allNamespaces);
 		}
 
 		$packageSection->overwrite("Finished re-namespacing packages.");
@@ -161,6 +217,8 @@ class RenamespaceCommand extends Command {
 		
 		//endregion
 
+		//region Finished
+
 		$project->save($projectOutputPath, $packagePrefix);
 		$output->writeln("Saved project.  Running composer ...");
 		$output->writeln("");
@@ -168,12 +226,12 @@ class RenamespaceCommand extends Command {
 		`cd {$projectOutputPath} && composer update`;
 		`rm -rf {$projectOutputPath}vendor/bin`;
 		rename($projectOutputPath.'vendor', $outputPath.'lib');
-		copy($this->rootDir.'Templates/index.php', $outputPath.'index.php');
-		`rm -rf $projectOutputPath`;
-		`rm -rf $libraryOutputPath`;
+		`rm -rf $tempPath`;
 
 		$output->writeln("");
 		$output->writeln("Finished.");
+
+		//endregion
 
 		return Command::SUCCESS;
 	}

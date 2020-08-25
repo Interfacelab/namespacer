@@ -20,7 +20,7 @@
   },
   "autoload": {
     "psr-4": {
-      "Namespacer\\": "Source"
+      "ILAB\\Namespacer\\": "Source"
     },
     "files": [
       "Source/functions.php"
