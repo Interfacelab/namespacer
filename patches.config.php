@@ -13,7 +13,7 @@ return [
 
 				if (file_exists($srcDir.'Kraken.php')) {
 					$source = file_get_contents($srcDir.'Kraken.php');
-					$source = str_replace('<?php', "<?php\n\nnamespace Kraken;", $source);
+					$source = str_replace('<?php', "<?php\n\nnamespace Kraken;\n\nuse \\CURLFile;", $source);
 					file_put_contents($srcDir.'Kraken.php', $source);
 				}
 
