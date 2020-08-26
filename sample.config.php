@@ -1,6 +1,20 @@
 <?php
 
 return [
+	/** These functions are called before a package is processed */
+	"prepare" => [
+		function(string $package, array $config, string $path, string $namespacePrefix) {
+			/**
+			 * @var string $package The name of the composer package
+			 * @var array $config The parsed composer.json config for the package
+			 * @var string $path The full path to the package
+			 * @var string $namespacePrefix The namespace prefix
+			 */
+
+			return $config; // You should always return the $config after manipulating it
+		}
+	],
+
 	/** These functions are called once the source file has been loaded but before all of the namespace changes are processed. */
 	"start" => [
 		function(string $source, ?string $currentNamespace, string $namespacePrefix, string $package, string $file) {

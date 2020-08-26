@@ -74,12 +74,13 @@ class Package {
 	//region Processing
 
 	/**
+	 * @param Configuration $configuration
 	 * @param string $packagePrefix
 	 * @param string $namespacePrefix
 	 * @param string $outputPath
 	 * @param Package[] $packages
 	 */
-	public function process(string $packagePrefix, string $namespacePrefix, string $outputPath, array $packages) {
+	public function process($configuration, string $packagePrefix, string $namespacePrefix, string $outputPath, array $packages) {
 		$outputPath = trailingslashit($outputPath);
 		$this->outputPath = $outputPath;
 
@@ -89,6 +90,8 @@ class Package {
 		}
 
 		$config = json_decode(file_get_contents($composerFile), true);
+
+		$config = $configuration->prepare($this->name, $config, $this->path, $namespacePrefix);
 
 		$config['name'] = $packagePrefix.'-'.$config['name'];
 		$config['version'] = $this->getVersion();
@@ -173,8 +176,8 @@ class Package {
 			$this->sourceFiles[] = $file->getRealPath();
 		}
 
-		$namespaceRegex = '/^\s*namespace\s+([^;]+)/m';
-		$idiotNamespaceRegex = '/^\s*\<\?php\s+namespace\s+([^;]+)/m';
+		$namespaceRegex = '/^\s*namespace\s+([^\s;]+)/m';
+		$idiotNamespaceRegex = '/^\s*\<\?php\s+namespace\s+([^\s;]+)/m';
 		foreach($this->sourceFiles as $file) {
 			$matches = [];
 			preg_match_all($namespaceRegex, file_get_contents($file), $matches, PREG_SET_ORDER, 0);

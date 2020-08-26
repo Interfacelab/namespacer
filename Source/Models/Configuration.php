@@ -11,6 +11,16 @@ class Configuration {
 		}
 	}
 
+	public function prepare(string $package, array $config, string $path, string $namespacePrefix) {
+		if (isset($this->config['prepare'])) {
+			foreach($this->config['prepare'] as $func) {
+				$config = call_user_func($func, $package, $config, $path, $namespacePrefix);
+			}
+		}
+
+		return $config;
+	}
+
 	public function start(string $source, ?string $currentNamespace, string $namespacePrefix, string $package, string $file) {
 		if (isset($this->config['start'])) {
 			foreach($this->config['start'] as $func) {

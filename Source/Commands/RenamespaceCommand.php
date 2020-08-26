@@ -176,7 +176,7 @@ class RenamespaceCommand extends Command {
 		foreach($project->getPackages() as $packageName => $package) {
 			$packageSection->overwrite("Processing package $packageName ...");
 			$packageProgress->advance();
-			$package->process($packagePrefix, $namespacePrefix, $libraryOutputPath, $project->getPackages());
+			$package->process($configuration, $packagePrefix, $namespacePrefix, $libraryOutputPath, $project->getPackages());
 			$allNamespaces = array_merge($allNamespaces, $package->getNamespaces());
 			$sourceFileCount += count($package->getSourceFiles());
 		}
