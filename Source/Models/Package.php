@@ -164,7 +164,8 @@ class Package {
 		 * change $this->name  dirname of $this->name it make sthe assumption ALL packages  are in teh format account/package
 		 * maybe this needs to be validated but I haven't found an example that doesn't
 		 */
-		`cp -r {$this->path} $outputPath . dirname( $this->name )`;
+		$target = $outputPath . dirname( $this->name );
+		`cp -r {$this->path} {$target}`;
 
 		file_put_contents($outputPath.$this->name.'/composer.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
