@@ -160,7 +160,7 @@ class Package {
 		unset($config['extra']['branch-alias']['dev-master']);
 
 		@mkdir("$outputPath{$this->name}", 0755, true);
-		`cp -r {$this->path} $outputPath{$this->name}/`;
+		`cp -r {$this->path} $outputPath . dirname( $this->name )`;
 
 		file_put_contents($outputPath.$this->name.'/composer.json', json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
