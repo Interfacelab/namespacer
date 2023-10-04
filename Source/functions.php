@@ -31,7 +31,7 @@ if (!function_exists('arrayPath')) {
 	}
 }
 
-if (!function_exists('')) {
+if (!function_exists('trailingslashit')) {
 	function trailingslashit( $string ) {
 		return untrailingslashit( $string ) . '/';
 	}
