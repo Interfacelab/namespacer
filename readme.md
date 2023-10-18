@@ -25,7 +25,7 @@ composer require ilab/namespacer
 Once installed:
 
 ```bash
-./vendor/bin/renamespace [--composer COMPOSER] [--source SOURCE] [--package PACKAGE] [--namespace NAMESPACE] [--config CONFIG] <dest>
+./vendor/bin/namespacer [--composer COMPOSER] [--source SOURCE] [--package PACKAGE] [--namespace NAMESPACE] [--config CONFIG] <dest>
 ```
 
 ### Arguments
